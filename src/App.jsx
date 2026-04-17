@@ -5,9 +5,11 @@ import AgentConsole from './AgentConsole.jsx'
 import { CHAT_API_BASE } from './chatConfig.js'
 import { getVisitorId } from './chatIdentity.js'
 
-const heroVideoSrc = '/videos/bg.mp4'
-const practiceVideoSrc = '/videos/practice.mp4'
-const aboutVideoSrc = '/videos/about.mp4'
+const assetBase = import.meta.env.BASE_URL
+const heroVideoSrc = `${assetBase}videos/bg.mp4`
+const practiceVideoSrc = `${assetBase}videos/practice.mp4`
+const aboutVideoSrc = `${assetBase}videos/about.mp4`
+const brandLogoSrc = `${assetBase}logo.png`
 
 const navItems = [
   { id: 'home', label: 'Home' },
@@ -645,7 +647,7 @@ export default function App() {
     <main className="site">
       <header className="topbar">
         <button className="brand brand-btn" onClick={() => setActivePage('home')}>
-          <img src="/logo.png" alt="Sequoia Law Group logo" className="brand-logo" />
+          <img src={brandLogoSrc} alt="Sequoia Law Group logo" className="brand-logo" />
           <span className="brand-text">SEQUOIA LAW GROUP</span>
         </button>
         <nav className="nav-links" aria-label="Primary navigation">
