@@ -10,6 +10,16 @@ const heroVideoSrc = `${assetBase}videos/bg.mp4`
 const practiceVideoSrc = `${assetBase}videos/practice.mp4`
 const aboutVideoSrc = `${assetBase}videos/about.mp4`
 const brandLogoSrc = `${assetBase}logo.png`
+const videoFallbackBase = '/Hello/'
+
+function videoSourcesFor(fileName) {
+  const candidates = [
+    `${assetBase}videos/${fileName}`,
+    `${videoFallbackBase}videos/${fileName}`,
+    `/videos/${fileName}`,
+  ]
+  return [...new Set(candidates)]
+}
 
 const navItems = [
   { id: 'home', label: 'Home' },
@@ -143,7 +153,11 @@ function HomePage({ onNavigate }) {
     <>
       <section className="hero-shell">
         <div className="hero-video-wrap" aria-hidden="true">
-          <video className="hero-video" src={heroVideoSrc} autoPlay loop muted playsInline />
+          <video className="hero-video" src={heroVideoSrc} autoPlay loop muted playsInline>
+            {videoSourcesFor('bg.mp4').map((src) => (
+              <source key={src} src={src} type="video/mp4" />
+            ))}
+          </video>
           <div className="hero-overlay" />
         </div>
 
@@ -200,7 +214,11 @@ function HomePage({ onNavigate }) {
 
         <section className="home-story-split reveal">
           <div className="home-story-media" aria-hidden="true">
-            <video src={aboutVideoSrc} autoPlay loop muted playsInline />
+            <video src={aboutVideoSrc} autoPlay loop muted playsInline>
+              {videoSourcesFor('about.mp4').map((src) => (
+                <source key={src} src={src} type="video/mp4" />
+              ))}
+            </video>
           </div>
           <article className="home-story-copy">
             <p className="section-kicker">Our Approach</p>
@@ -283,7 +301,11 @@ function AboutPage() {
     <section className="page-block page-block-flush reveal">
       <section className="about-cinematic about-hero">
         <div className="about-video-wrap" aria-hidden="true">
-          <video className="about-video" src={aboutVideoSrc} autoPlay loop muted playsInline />
+          <video className="about-video" src={aboutVideoSrc} autoPlay loop muted playsInline>
+            {videoSourcesFor('about.mp4').map((src) => (
+              <source key={src} src={src} type="video/mp4" />
+            ))}
+          </video>
           <div className="about-video-overlay" />
         </div>
 
@@ -348,7 +370,11 @@ function ServicesPage() {
             loop
             muted
             playsInline
-          />
+          >
+            {videoSourcesFor('practice.mp4').map((src) => (
+              <source key={src} src={src} type="video/mp4" />
+            ))}
+          </video>
           <div className="practice-video-overlay" />
         </div>
 
