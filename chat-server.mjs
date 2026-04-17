@@ -98,6 +98,7 @@ const server = http.createServer(async (req, res) => {
           sender: parsed.sender ?? 'visitor',
           senderLabel: parsed.senderLabel ?? 'Visitor',
           role: parsed.role ?? 'visitor',
+          targetClient: parsed.targetClient ?? null,
           createdAt: new Date().toISOString(),
         }
 

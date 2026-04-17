@@ -43,6 +43,7 @@ export default function AgentConsole() {
         order.push(message.sender)
         bySender.set(message.sender, {
           sender: message.sender,
+          senderLabel: message.senderLabel || 'Visitor',
           label: `Client ${order.length}`,
           latestAt: message.createdAt ?? message.timestamp ?? '',
         })
@@ -58,7 +59,9 @@ export default function AgentConsole() {
     if (activeClient === 'all') return messages
     return messages.filter((message) => {
       const isAgent = message.role === 'agent' || message.sender === AGENT_ID
-      return isAgent || message.sender === activeClient || message.sender === 'system-assistant'
+      if (message.sender === 'system-assistant') return true
+      if (isAgent) return message.targetClient === activeClient
+      return message.sender === activeClient
     })
   }, [messages, activeClient])
 
@@ -116,11 +119,23 @@ export default function AgentConsole() {
 
     setIsSending(true)
     try {
+      const targetClient =
+        activeClient !== 'all'
+          ? activeClient
+          : clientThreads.length > 0
+            ? clientThreads[0].sender
+            : null
+
+      if (!targetClient) {
+        return
+      }
+
       const created = await postMessage({
         room: CHAT_ROOM,
         sender: AGENT_ID,
         senderLabel: agentLabel,
         role: 'agent',
+        targetClient,
         text,
       })
       if (created) {
@@ -239,10 +254,14 @@ export default function AgentConsole() {
           <input
             value={input}
             onChange={(event) => setInput(event.target.value)}
-            placeholder="Reply as Sequoia Team..."
+            placeholder={
+              activeClient === 'all'
+                ? 'Select a client tab to reply...'
+                : `Reply to ${clientThreads.find((item) => item.sender === activeClient)?.label ?? 'Client'}...`
+            }
             className="chat-input"
           />
-          <button className="chat-send" type="submit" disabled={isSending}>
+          <button className="chat-send" type="submit" disabled={isSending || activeClient === 'all'}>
             Reply
           </button>
         </form>

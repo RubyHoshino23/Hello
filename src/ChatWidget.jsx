@@ -30,6 +30,17 @@ export default function ChatWidget() {
   const followupTimerRef = useRef(null)
 
   const visitorId = useMemo(() => getVisitorId(), [])
+  const visibleMessages = useMemo(
+    () =>
+      messages.filter((message) => {
+        if (message.sender === 'system-assistant') return true
+        if (message.sender === visitorId) return true
+        const isAgent = message.role === 'agent' || String(message.sender ?? '').startsWith('agent')
+        if (!isAgent) return false
+        return message.targetClient === visitorId
+      }),
+    [messages, visitorId],
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -126,8 +137,11 @@ export default function ChatWidget() {
   }, [isOpen, autoWaitEnabled])
 
   const hasAgentReply = useMemo(
-    () => messages.some((m) => m.role === 'agent' && m.sender !== 'system-assistant'),
-    [messages],
+    () =>
+      visibleMessages.some(
+        (m) => (m.role === 'agent' || String(m.sender ?? '').startsWith('agent')) && m.targetClient === visitorId,
+      ),
+    [visibleMessages, visitorId],
   )
 
   useEffect(() => {
@@ -201,12 +215,12 @@ export default function ChatWidget() {
           </header>
 
           <div className="chat-messages" ref={listRef}>
-            {messages.length === 0 ? (
+            {visibleMessages.length === 0 ? (
               <p className="chat-empty">
                 Type below to tell us how we can help.
               </p>
             ) : (
-              messages.map((message) => {
+              visibleMessages.map((message) => {
                 const isVisitor = message.sender === visitorId
                 return (
                   <article
