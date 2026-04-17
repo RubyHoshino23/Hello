@@ -215,7 +215,11 @@ export default function AgentConsole() {
             <p className="chat-empty">Waiting for a visitor message…</p>
           ) : (
             visibleMessages.map((message) => {
-              const isAgent = message.role === 'agent' || message.sender === AGENT_ID
+              const isAgent =
+                message.role === 'agent' ||
+                message.sender === AGENT_ID ||
+                message.senderLabel === agentLabel ||
+                String(message.sender ?? '').startsWith('agent')
               return (
                 <article
                   key={message.id}
