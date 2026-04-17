@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { CHAT_ROOM } from './chatConfig.js'
+import { AGENT_ACCESS_KEY, CHAT_ROOM } from './chatConfig.js'
 import {
   loadHistory as loadChatHistory,
   postMessage,
@@ -7,17 +7,57 @@ import {
 } from './chatTransport.js'
 
 const AGENT_ID = 'agent-sequoia'
+const AGENT_AUTH_SESSION_KEY = 'sequoia_agent_console_authorized'
 
 export default function AgentConsole() {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
+  const [accessInput, setAccessInput] = useState('')
+  const [isAuthorized, setIsAuthorized] = useState(() => {
+    if (!AGENT_ACCESS_KEY) return true
+    return sessionStorage.getItem(AGENT_AUTH_SESSION_KEY) === '1'
+  })
+  const [activeClient, setActiveClient] = useState('all')
   const [status, setStatus] = useState('connecting')
   const [isSending, setIsSending] = useState(false)
   const listRef = useRef(null)
 
   const agentLabel = useMemo(() => 'Sequoia Team', [])
+  const clientThreads = useMemo(() => {
+    const order = []
+    const bySender = new Map()
+    for (const message of messages) {
+      const isClient =
+        message.role !== 'agent' &&
+        message.sender !== AGENT_ID &&
+        message.sender !== 'system-assistant'
+      if (!isClient) continue
+
+      if (!bySender.has(message.sender)) {
+        order.push(message.sender)
+        bySender.set(message.sender, {
+          sender: message.sender,
+          label: `Client ${order.length}`,
+          latestAt: message.createdAt ?? message.timestamp ?? '',
+        })
+      } else {
+        const existing = bySender.get(message.sender)
+        existing.latestAt = message.createdAt ?? message.timestamp ?? existing.latestAt
+      }
+    }
+    return order.map((sender) => bySender.get(sender))
+  }, [messages])
+
+  const visibleMessages = useMemo(() => {
+    if (activeClient === 'all') return messages
+    return messages.filter((message) => {
+      const isAgent = message.role === 'agent' || message.sender === AGENT_ID
+      return isAgent || message.sender === activeClient || message.sender === 'system-assistant'
+    })
+  }, [messages, activeClient])
 
   useEffect(() => {
+    if (!isAuthorized) return () => {}
     let cancelled = false
 
     async function loadHistory() {
@@ -44,13 +84,20 @@ export default function AgentConsole() {
       cancelled = true
       unsubscribe()
     }
-  }, [])
+  }, [isAuthorized])
+
+  useEffect(() => {
+    if (activeClient === 'all') return
+    if (!clientThreads.some((item) => item.sender === activeClient)) {
+      setActiveClient('all')
+    }
+  }, [activeClient, clientThreads])
 
   useEffect(() => {
     if (listRef.current) {
       listRef.current.scrollTop = listRef.current.scrollHeight
     }
-  }, [messages])
+  }, [visibleMessages])
 
   async function sendMessage(event) {
     event.preventDefault()
@@ -75,6 +122,38 @@ export default function AgentConsole() {
     }
   }
 
+  function unlockConsole(event) {
+    event.preventDefault()
+    if (!AGENT_ACCESS_KEY || accessInput === AGENT_ACCESS_KEY) {
+      setIsAuthorized(true)
+      sessionStorage.setItem(AGENT_AUTH_SESSION_KEY, '1')
+      setAccessInput('')
+      return
+    }
+    setAccessInput('')
+  }
+
+  if (!isAuthorized) {
+    return (
+      <main className="agent-page">
+        <section className="agent-auth-panel">
+          <p className="agent-title">Agent Console Access</p>
+          <p className="agent-wait-copy">Enter your private access key to open the console.</p>
+          <form className="agent-auth-form" onSubmit={unlockConsole}>
+            <input
+              type="password"
+              value={accessInput}
+              onChange={(event) => setAccessInput(event.target.value)}
+              placeholder="Access key"
+              className="chat-input"
+            />
+            <button className="chat-send" type="submit">Unlock</button>
+          </form>
+        </section>
+      </main>
+    )
+  }
+
   return (
     <main className="agent-page">
       <section className="agent-panel">
@@ -91,15 +170,33 @@ export default function AgentConsole() {
           </div>
         </header>
 
+        <div className="agent-client-tabs">
+          <button
+            className={`agent-client-tab ${activeClient === 'all' ? 'is-active' : ''}`}
+            onClick={() => setActiveClient('all')}
+          >
+            All Clients
+          </button>
+          {clientThreads.map((client) => (
+            <button
+              key={client.sender}
+              className={`agent-client-tab ${activeClient === client.sender ? 'is-active' : ''}`}
+              onClick={() => setActiveClient(client.sender)}
+            >
+              {client.label}
+            </button>
+          ))}
+        </div>
+
         <div className="agent-messages" ref={listRef}>
           <p className="agent-auto-msg">
             <strong>System:</strong> New visitor messages and contact inquiries appear in this thread.
             Typical first response should be sent within a few minutes during business hours.
           </p>
-          {messages.length === 0 ? (
+          {visibleMessages.length === 0 ? (
             <p className="chat-empty">Waiting for a visitor message…</p>
           ) : (
-            messages.map((message) => {
+            visibleMessages.map((message) => {
               const isAgent = message.role === 'agent' || message.sender === AGENT_ID
               return (
                 <article

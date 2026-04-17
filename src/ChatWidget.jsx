@@ -145,10 +145,6 @@ export default function ChatWidget() {
     }
   }
 
-  function openAgentWindow() {
-    window.open('/?agent=1', 'sequoia-agent-console', 'width=520,height=760')
-  }
-
   function usePrompt(text) {
     setInput(text)
     setIsOpen(true)
@@ -230,9 +226,6 @@ export default function ChatWidget() {
               Send
             </button>
           </form>
-          <button className="chat-test-link" onClick={openAgentWindow}>
-            Open Agent Test Window
-          </button>
         </section>
       ) : null}
 

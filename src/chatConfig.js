@@ -9,3 +9,4 @@ export const CHAT_API_BASE =
   import.meta.env.VITE_CHAT_API_BASE ?? (isGithubPages ? '' : `http://${runtimeHost}:8787`)
 export const CHAT_ROOM = 'sequoia-website'
 export const CHAT_TRANSPORT = CHAT_API_BASE ? 'remote' : 'local'
+export const AGENT_ACCESS_KEY = import.meta.env.VITE_AGENT_ACCESS_KEY ?? 'sequoia-owner'

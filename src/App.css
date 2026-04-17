@@ -1279,6 +1279,23 @@
   grid-template-rows: auto 1fr auto;
 }
 
+.agent-auth-panel {
+  max-width: 500px;
+  margin: 8vh auto 0;
+  border-radius: 18px;
+  border: 1px solid var(--gold-line);
+  background: linear-gradient(180deg, rgba(16, 19, 27, 0.98), rgba(10, 11, 16, 0.99));
+  box-shadow: 0 22px 40px rgba(3, 5, 9, 0.5);
+  padding: 18px;
+}
+
+.agent-auth-form {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
 .agent-header {
   padding: 14px 16px;
   border-bottom: 1px solid rgba(212, 175, 55, 0.2);
@@ -1313,6 +1330,30 @@
 .agent-auto-msg strong {
   color: var(--gold-2);
   font-weight: 600;
+}
+
+.agent-client-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.16);
+}
+
+.agent-client-tab {
+  border: 1px solid rgba(212, 175, 55, 0.24);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e5e7eb;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.agent-client-tab.is-active {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: rgba(242, 210, 119, 0.6);
+  color: #fef3c7;
 }
 
 .agent-messages {
