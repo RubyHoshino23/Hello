@@ -1,13 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { CHAT_API_BASE, CHAT_ROOM } from './chatConfig.js'
+import { CHAT_ROOM } from './chatConfig.js'
 import { getVisitorId } from './chatIdentity.js'
+import {
+  loadHistory as loadChatHistory,
+  postMessage,
+  subscribeMessages,
+} from './chatTransport.js'
 
 const AUTO_WAIT_ID = 'auto-wait-msg'
 const AUTO_WAIT_FOLLOWUP_ID = 'auto-wait-followup-msg'
 const AUTO_WAIT_TEXT =
-  'Thank you for contacting Sequoia Law Group. Please wait while we connect you with an available team member.'
+  'Thank you for contacting Sequoia Law Group. Please wait while we connect you with a team member.'
 const AUTO_WAIT_FOLLOWUP_TEXT =
-  'During busy periods, responses may take a few minutes. Your message is important to us and we will reply shortly.'
+  'We are currently assisting other clients. Please stay in this chat and we will respond as soon as possible.'
 
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
@@ -15,6 +20,7 @@ export default function ChatWidget() {
   const [input, setInput] = useState('')
   const [status, setStatus] = useState('connecting')
   const [isSending, setIsSending] = useState(false)
+  const [autoWaitEnabled, setAutoWaitEnabled] = useState(true)
   const listRef = useRef(null)
   const followupTimerRef = useRef(null)
 
@@ -22,45 +28,30 @@ export default function ChatWidget() {
 
   useEffect(() => {
     let cancelled = false
-    const controller = new AbortController()
 
-    async function loadHistory() {
+    async function hydrateHistory() {
       try {
-        const response = await fetch(
-          `${CHAT_API_BASE}/api/messages?room=${encodeURIComponent(CHAT_ROOM)}`,
-          { signal: controller.signal },
-        )
-        const data = await response.json()
+        const data = await loadChatHistory(CHAT_ROOM)
         if (!cancelled) {
-          setMessages(Array.isArray(data.messages) ? data.messages : [])
+          setMessages(data)
         }
       } catch (_err) {
         if (!cancelled) setStatus('offline')
       }
     }
 
-    loadHistory()
+    hydrateHistory()
 
-    const stream = new EventSource(
-      `${CHAT_API_BASE}/api/stream?room=${encodeURIComponent(CHAT_ROOM)}`,
-    )
-    stream.onopen = () => setStatus('online')
-    stream.onerror = () => setStatus('offline')
-    stream.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data)
-        if (data.type === 'message' && data.message) {
-          setMessages((prev) => [...prev, data.message])
-        }
-      } catch (_err) {
-        // Ignore malformed stream events.
-      }
-    }
+    const unsubscribe = subscribeMessages(CHAT_ROOM, {
+      onStatus: setStatus,
+      onMessage: (message) => {
+        setMessages((prev) => (prev.some((item) => item.id === message.id) ? prev : [...prev, message]))
+      },
+    })
 
     return () => {
       cancelled = true
-      controller.abort()
-      stream.close()
+      unsubscribe()
     }
   }, [])
 
@@ -70,6 +61,14 @@ export default function ChatWidget() {
         clearTimeout(followupTimerRef.current)
         followupTimerRef.current = null
       }
+      return
+    }
+    if (!autoWaitEnabled) {
+      setMessages((prev) =>
+        prev.filter(
+          (message) => message.id !== AUTO_WAIT_ID && message.id !== AUTO_WAIT_FOLLOWUP_ID,
+        ),
+      )
       return
     }
     setMessages((prev) => {
@@ -110,7 +109,7 @@ export default function ChatWidget() {
         followupTimerRef.current = null
       }
     }
-  }, [isOpen])
+  }, [isOpen, autoWaitEnabled])
 
   const hasAgentReply = useMemo(
     () => messages.some((m) => m.role === 'agent' && m.sender !== 'system-assistant'),
@@ -130,21 +129,17 @@ export default function ChatWidget() {
 
     setIsSending(true)
     try {
-      const response = await fetch(`${CHAT_API_BASE}/api/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          room: CHAT_ROOM,
-          sender: visitorId,
-          senderLabel: 'You',
-          role: 'visitor',
-          text,
-        }),
+      const created = await postMessage({
+        room: CHAT_ROOM,
+        sender: visitorId,
+        senderLabel: 'You',
+        role: 'visitor',
+        text,
       })
-
-      if (response.ok) {
-        setInput('')
+      if (created) {
+        setMessages((prev) => [...prev, created])
       }
+      setInput('')
     } finally {
       setIsSending(false)
     }
@@ -183,6 +178,12 @@ export default function ChatWidget() {
                   onClick={() => usePrompt('I need a consultation for a business dispute.')}
                 >
                   Business Dispute
+                </button>
+                <button
+                  className={`chat-tool-btn ${autoWaitEnabled ? 'is-active' : ''}`}
+                  onClick={() => setAutoWaitEnabled((prev) => !prev)}
+                >
+                  Auto Wait: {autoWaitEnabled ? 'On' : 'Off'}
                 </button>
               </div>
             </div>

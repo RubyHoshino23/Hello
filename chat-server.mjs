@@ -1,7 +1,7 @@
 import http from 'node:http'
 import { randomUUID } from 'node:crypto'
 
-const PORT = 8787
+const PORT = Number(process.env.PORT) || 8787
 const rooms = new Map()
 const streams = new Map()
 
@@ -118,5 +118,5 @@ const server = http.createServer(async (req, res) => {
 })
 
 server.listen(PORT, () => {
-  console.log(`Chat server running on http://localhost:${PORT}`)
+  console.log(`Chat server running on port ${PORT}`)
 })

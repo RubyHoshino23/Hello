@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { CHAT_API_BASE, CHAT_ROOM } from './chatConfig.js'
+import { CHAT_ROOM } from './chatConfig.js'
+import {
+  loadHistory as loadChatHistory,
+  postMessage,
+  subscribeMessages,
+} from './chatTransport.js'
 
 const AGENT_ID = 'agent-sequoia'
 
@@ -14,17 +19,12 @@ export default function AgentConsole() {
 
   useEffect(() => {
     let cancelled = false
-    const controller = new AbortController()
 
     async function loadHistory() {
       try {
-        const response = await fetch(
-          `${CHAT_API_BASE}/api/messages?room=${encodeURIComponent(CHAT_ROOM)}`,
-          { signal: controller.signal },
-        )
-        const data = await response.json()
+        const data = await loadChatHistory(CHAT_ROOM)
         if (!cancelled) {
-          setMessages(Array.isArray(data.messages) ? data.messages : [])
+          setMessages(data)
         }
       } catch (_err) {
         if (!cancelled) setStatus('offline')
@@ -33,26 +33,16 @@ export default function AgentConsole() {
 
     loadHistory()
 
-    const stream = new EventSource(
-      `${CHAT_API_BASE}/api/stream?room=${encodeURIComponent(CHAT_ROOM)}`,
-    )
-    stream.onopen = () => setStatus('online')
-    stream.onerror = () => setStatus('offline')
-    stream.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data)
-        if (data.type === 'message' && data.message) {
-          setMessages((prev) => [...prev, data.message])
-        }
-      } catch (_err) {
-        // Ignore malformed stream events.
-      }
-    }
+    const unsubscribe = subscribeMessages(CHAT_ROOM, {
+      onStatus: setStatus,
+      onMessage: (message) => {
+        setMessages((prev) => (prev.some((item) => item.id === message.id) ? prev : [...prev, message]))
+      },
+    })
 
     return () => {
       cancelled = true
-      controller.abort()
-      stream.close()
+      unsubscribe()
     }
   }, [])
 
@@ -69,21 +59,17 @@ export default function AgentConsole() {
 
     setIsSending(true)
     try {
-      const response = await fetch(`${CHAT_API_BASE}/api/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          room: CHAT_ROOM,
-          sender: AGENT_ID,
-          senderLabel: agentLabel,
-          role: 'agent',
-          text,
-        }),
+      const created = await postMessage({
+        room: CHAT_ROOM,
+        sender: AGENT_ID,
+        senderLabel: agentLabel,
+        role: 'agent',
+        text,
       })
-
-      if (response.ok) {
-        setInput('')
+      if (created) {
+        setMessages((prev) => [...prev, created])
       }
+      setInput('')
     } finally {
       setIsSending(false)
     }

@@ -1114,6 +1114,12 @@
   cursor: pointer;
 }
 
+.chat-tool-btn.is-active {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: rgba(242, 210, 119, 0.6);
+  color: #fef3c7;
+}
+
 .chat-title {
   margin: 0;
   color: #f9fafb;

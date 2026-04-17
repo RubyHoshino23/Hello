@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "start": "node chat-server.mjs",
     "chat:server": "node chat-server.mjs",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
