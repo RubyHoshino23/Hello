@@ -8,6 +8,7 @@ import {
 
 const AGENT_ID = 'agent-sequoia'
 const AGENT_AUTH_SESSION_KEY = 'sequoia_agent_console_authorized'
+const AUTO_WAIT_FLAG_KEY = 'sequoia_auto_wait_enabled'
 
 export default function AgentConsole() {
   const [messages, setMessages] = useState([])
@@ -18,6 +19,11 @@ export default function AgentConsole() {
     return sessionStorage.getItem(AGENT_AUTH_SESSION_KEY) === '1'
   })
   const [activeClient, setActiveClient] = useState('all')
+  const [autoWaitEnabled, setAutoWaitEnabled] = useState(() => {
+    const saved = localStorage.getItem(AUTO_WAIT_FLAG_KEY)
+    if (saved === null) return true
+    return saved !== 'false'
+  })
   const [status, setStatus] = useState('connecting')
   const [isSending, setIsSending] = useState(false)
   const listRef = useRef(null)
@@ -85,6 +91,10 @@ export default function AgentConsole() {
       unsubscribe()
     }
   }, [isAuthorized])
+
+  useEffect(() => {
+    localStorage.setItem(AUTO_WAIT_FLAG_KEY, autoWaitEnabled ? 'true' : 'false')
+  }, [autoWaitEnabled])
 
   useEffect(() => {
     if (activeClient === 'all') return
@@ -163,6 +173,14 @@ export default function AgentConsole() {
             <p className={`chat-status chat-${status}`}>
               {status === 'online' ? 'Connected — monitoring visitor chat' : 'Connecting...'}
             </p>
+            <div className="agent-controls">
+              <button
+                className={`agent-control-btn ${autoWaitEnabled ? 'is-active' : ''}`}
+                onClick={() => setAutoWaitEnabled((prev) => !prev)}
+              >
+                Auto Wait: {autoWaitEnabled ? 'On' : 'Off'}
+              </button>
+            </div>
             <p className="agent-wait-copy">
               Visitors see an automatic wait message until someone from the team replies.
               Reply below when you are ready to take the conversation.

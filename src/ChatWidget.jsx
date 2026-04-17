@@ -9,6 +9,7 @@ import {
 
 const AUTO_WAIT_ID = 'auto-wait-msg'
 const AUTO_WAIT_FOLLOWUP_ID = 'auto-wait-followup-msg'
+const AUTO_WAIT_FLAG_KEY = 'sequoia_auto_wait_enabled'
 const AUTO_WAIT_TEXT =
   'Thank you for contacting Sequoia Law Group. Please wait while we connect you with a team member.'
 const AUTO_WAIT_FOLLOWUP_TEXT =
@@ -20,7 +21,11 @@ export default function ChatWidget() {
   const [input, setInput] = useState('')
   const [status, setStatus] = useState('connecting')
   const [isSending, setIsSending] = useState(false)
-  const [autoWaitEnabled, setAutoWaitEnabled] = useState(true)
+  const [autoWaitEnabled, setAutoWaitEnabled] = useState(() => {
+    const saved = localStorage.getItem(AUTO_WAIT_FLAG_KEY)
+    if (saved === null) return true
+    return saved !== 'false'
+  })
   const listRef = useRef(null)
   const followupTimerRef = useRef(null)
 
@@ -53,6 +58,15 @@ export default function ChatWidget() {
       cancelled = true
       unsubscribe()
     }
+  }, [])
+
+  useEffect(() => {
+    function onStorage(event) {
+      if (event.key !== AUTO_WAIT_FLAG_KEY) return
+      setAutoWaitEnabled(event.newValue !== 'false')
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
   }, [])
 
   useEffect(() => {
@@ -174,12 +188,6 @@ export default function ChatWidget() {
                   onClick={() => usePrompt('I need a consultation for a business dispute.')}
                 >
                   Business Dispute
-                </button>
-                <button
-                  className={`chat-tool-btn ${autoWaitEnabled ? 'is-active' : ''}`}
-                  onClick={() => setAutoWaitEnabled((prev) => !prev)}
-                >
-                  Auto Wait: {autoWaitEnabled ? 'On' : 'Off'}
                 </button>
               </div>
             </div>

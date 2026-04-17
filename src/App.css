@@ -1316,6 +1316,26 @@
   max-width: 52ch;
 }
 
+.agent-controls {
+  margin-top: 10px;
+}
+
+.agent-control-btn {
+  border: 1px solid rgba(212, 175, 55, 0.24);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e5e7eb;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.agent-control-btn.is-active {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: rgba(242, 210, 119, 0.6);
+  color: #fef3c7;
+}
+
 .agent-auto-msg {
   margin: 0 0 4px;
   padding: 10px 12px;
