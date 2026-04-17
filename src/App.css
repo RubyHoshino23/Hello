@@ -1259,6 +1259,9 @@
 }
 
 .agent-page {
+  --gold-1: #d4af37;
+  --gold-2: #f2d277;
+  --gold-line: rgba(212, 175, 55, 0.26);
   min-height: 100vh;
   background:
     radial-gradient(circle at 20% 10%, rgba(212, 175, 55, 0.14), transparent 35%),
