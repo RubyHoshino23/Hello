@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import ChatWidget from './ChatWidget.jsx'
 import AgentConsole from './AgentConsole.jsx'
@@ -32,19 +32,28 @@ const navItems = [
 
 const serviceCards = [
   {
+    id: 'formation-governance',
     title: 'Business Formation & Governance',
     description:
       'Entity structuring, shareholder agreements, and board governance frameworks for long-term stability.',
+    timeline: '1-3 weeks for foundational structuring',
+    process: 'Assessment, ownership framework design, and governance implementation.',
   },
   {
+    id: 'commercial-contracts',
     title: 'Commercial Contracts',
     description:
       'Drafting and negotiation support for vendor, licensing, service, and strategic partnership agreements.',
+    timeline: '3-10 business days for core contract cycles',
+    process: 'Clause risk review, redlining strategy, and negotiation support.',
   },
   {
+    id: 'dispute-resolution',
     title: 'Dispute Resolution',
     description:
       'Commercial dispute strategy and representation focused on reducing risk and protecting reputation.',
+    timeline: '24-72 hour response for urgent disputes',
+    process: 'Rapid case triage, leverage analysis, and dispute posture planning.',
   },
 ]
 
@@ -71,19 +80,31 @@ const teamMembers = [
 
 const insights = [
   {
+    id: 'cross-border-contract-enforcement',
     title: 'Cross-Border Contract Enforcement for International Vendors',
     date: 'March 22, 2026',
     category: 'Contracts',
+    serviceId: 'commercial-contracts',
+    summary:
+      'A strategic briefing on contract enforceability, risk transfer clauses, and dispute readiness for international operations.',
   },
   {
+    id: 'minority-shareholder-protection',
     title: 'Protecting Minority Shareholders in Mid-Market Companies',
     date: 'March 14, 2026',
     category: 'Corporate Governance',
+    serviceId: 'formation-governance',
+    summary:
+      'Practical protections for minority positions, board process controls, and governance dispute prevention.',
   },
   {
+    id: 'commercial-dispute-risk-reduction',
     title: 'How to Reduce Risk During High-Value Commercial Disputes',
     date: 'January 24, 2026',
     category: 'Dispute Resolution',
+    serviceId: 'dispute-resolution',
+    summary:
+      'How leadership teams can manage litigation posture, preserve leverage, and protect business continuity.',
   },
 ]
 
@@ -170,12 +191,15 @@ function HomePage({ onNavigate }) {
           </p>
           <div className="hero-actions">
             <button className="btn btn-gold" onClick={() => onNavigate('contact')}>
-              Book a Consultation
+              Schedule a Strategy Call
             </button>
             <button className="btn btn-dark" onClick={() => onNavigate('services')}>
               Explore Services
             </button>
           </div>
+          <p className="hero-proof">
+            Senior-led counsel with a 1 business day response target for new inquiries.
+          </p>
 
           <section className="home-info-grid">
             {homeHighlights.map((item) => (
@@ -344,7 +368,7 @@ function AboutPage() {
   )
 }
 
-function ServicesPage() {
+function ServicesPage({ onOpenService }) {
   const featuredMatters = [
     {
       title: 'Shareholder Rights During Governance Disputes',
@@ -407,10 +431,68 @@ function ServicesPage() {
             <article key={card.title} className="card">
               <h3>{card.title}</h3>
               <p>{card.description}</p>
+              <button className="service-link" onClick={() => onOpenService(card.id)}>
+                View service details
+              </button>
             </article>
           ))}
         </div>
       </div>
+    </section>
+  )
+}
+
+function ServiceDetailPage({ serviceId, onBack, onNavigate }) {
+  const service = serviceCards.find((item) => item.id === serviceId)
+  if (!service) {
+    return (
+      <section className="container page-block reveal">
+        <article className="section">
+          <h2>Service not found.</h2>
+          <button className="btn btn-dark" onClick={onBack}>
+            Back to Services
+          </button>
+        </article>
+      </section>
+    )
+  }
+
+  const relatedInsights = insights.filter((item) => item.serviceId === serviceId)
+
+  return (
+    <section className="container page-block reveal">
+      <article className="section">
+        <p className="section-kicker">Service Detail</p>
+        <h2>{service.title}</h2>
+        <p className="lead">{service.description}</p>
+        <p>
+          <strong>Process:</strong> {service.process}
+        </p>
+        <p>
+          <strong>Typical timeline:</strong> {service.timeline}
+        </p>
+        <div className="service-detail-actions">
+          <button className="btn btn-dark" onClick={onBack}>
+            Back to Services
+          </button>
+          <button className="btn btn-gold" onClick={() => onNavigate('contact')}>
+            Schedule a Strategy Call
+          </button>
+        </div>
+      </article>
+      <article className="section">
+        <p className="section-kicker">Related Insights</p>
+        <div className="insight-list">
+          {relatedInsights.map((item) => (
+            <article key={item.id} className="insight-item">
+              <p className="insight-category">{item.category}</p>
+              <h3>{item.title}</h3>
+              <p className="insight-date">{item.date}</p>
+              <p>{item.summary}</p>
+            </article>
+          ))}
+        </div>
+      </article>
     </section>
   )
 }
@@ -442,7 +524,7 @@ function TeamPage() {
   )
 }
 
-function InsightsPage() {
+function InsightsPage({ onOpenService, onNavigate }) {
   const [featured, ...articles] = insights
 
   return (
@@ -457,10 +539,10 @@ function InsightsPage() {
           <p className="insight-category">{featured.category}</p>
           <h3>{featured.title}</h3>
           <p className="insight-date">{featured.date}</p>
-          <p>
-            A strategic briefing on contract enforceability, risk transfer clauses,
-            and dispute readiness for international operations.
-          </p>
+          <p>{featured.summary}</p>
+          <button className="service-link" onClick={() => onOpenService(featured.serviceId)}>
+            Related service
+          </button>
         </article>
 
         <div className="insight-list">
@@ -469,6 +551,10 @@ function InsightsPage() {
               <p className="insight-category">{item.category}</p>
               <h3>{item.title}</h3>
               <p className="insight-date">{item.date}</p>
+              <p>{item.summary}</p>
+              <button className="service-link" onClick={() => onOpenService(item.serviceId)}>
+                Related service
+              </button>
             </article>
           ))}
         </div>
@@ -480,9 +566,16 @@ function InsightsPage() {
             <p className="insight-category">{item.category}</p>
             <h3>{item.title}</h3>
             <p className="insight-date">{item.date}</p>
+            <p>{item.summary}</p>
+            <button className="service-link" onClick={() => onOpenService(item.serviceId)}>
+              Related service
+            </button>
           </article>
         ))}
       </section>
+      <button className="btn btn-gold" onClick={() => onNavigate('contact')}>
+        Schedule a Strategy Call
+      </button>
     </section>
   )
 }
@@ -543,6 +636,15 @@ function ContactPage() {
     }
   }
 
+  function validateRequiredFields() {
+    const cleanMessage = message.trim()
+    if (!fullName.trim() || !email.trim() || !cleanMessage) {
+      setStatus('Please complete name, email, and inquiry details.')
+      return false
+    }
+    return true
+  }
+
   const emailSubject = encodeURIComponent(`New ${caseType} inquiry from ${fullName || 'Website Visitor'}`)
   const emailBody = encodeURIComponent(
     `Full Name: ${fullName}\nEmail: ${email}\nCase Type: ${caseType}\n\nMessage:\n${message}`,
@@ -568,7 +670,7 @@ function ContactPage() {
             intake@sequolaw.com
           </a>
           <p className="contact-help-text">
-            Select your case type and submit using email or automatic message.
+            Expect a response within 1 business day. Your details are used only for intake follow-up.
           </p>
         </article>
 
@@ -581,6 +683,7 @@ function ContactPage() {
             value={fullName}
             onChange={(event) => setFullName(event.target.value)}
             placeholder="Your full name"
+            required
           />
 
           <label className="field-label" htmlFor="email">Email</label>
@@ -591,6 +694,7 @@ function ContactPage() {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="you@example.com"
+            required
           />
 
           <label className="field-label" htmlFor="case-type">Type of Case</label>
@@ -612,6 +716,7 @@ function ContactPage() {
             value={message}
             onChange={(event) => setMessage(event.target.value)}
             placeholder="Briefly explain your inquiry."
+            required
           />
 
           <div className="contact-methods">
@@ -635,12 +740,17 @@ function ContactPage() {
             <a
               className="btn btn-gold contact-submit"
               href={`mailto:intake@sequolaw.com?subject=${emailSubject}&body=${emailBody}`}
+              onClick={(event) => {
+                if (!validateRequiredFields()) {
+                  event.preventDefault()
+                }
+              }}
             >
-              Open Email Draft
+              Schedule a Strategy Call via Email
             </a>
           ) : (
             <button className="btn btn-gold contact-submit" type="submit" disabled={isSending}>
-              {isSending ? 'Sending...' : 'Send Inquiry Now'}
+              {isSending ? 'Sending...' : 'Schedule a Strategy Call'}
             </button>
           )}
 
@@ -654,16 +764,46 @@ function ContactPage() {
 export default function App() {
   const isAgentView = new URLSearchParams(window.location.search).get('agent') === '1'
   const [activePage, setActivePage] = useState('home')
+  const [activeServiceId, setActiveServiceId] = useState(serviceCards[0].id)
+
+  useEffect(() => {
+    const titles = {
+      home: 'Sequoia Law Group | Business Law Counsel',
+      about: 'About | Sequoia Law Group',
+      services: 'Services | Sequoia Law Group',
+      serviceDetail: 'Service Detail | Sequoia Law Group',
+      team: 'Professionals | Sequoia Law Group',
+      insights: 'Insights | Sequoia Law Group',
+      contact: 'Schedule a Strategy Call | Sequoia Law Group',
+    }
+    document.title = titles[activePage] ?? titles.home
+  }, [activePage])
+
+  function openService(serviceId) {
+    setActiveServiceId(serviceId)
+    setActivePage('serviceDetail')
+  }
 
   const page = useMemo(() => {
     if (activePage === 'about') return <AboutPage />
-    if (activePage === 'services') return <ServicesPage />
+    if (activePage === 'services') return <ServicesPage onOpenService={openService} />
+    if (activePage === 'serviceDetail') {
+      return (
+        <ServiceDetailPage
+          serviceId={activeServiceId}
+          onBack={() => setActivePage('services')}
+          onNavigate={setActivePage}
+        />
+      )
+    }
     if (activePage === 'team') return <TeamPage />
-    if (activePage === 'insights') return <InsightsPage />
+    if (activePage === 'insights') {
+      return <InsightsPage onOpenService={openService} onNavigate={setActivePage} />
+    }
     if (activePage === 'contact') return <ContactPage />
 
     return <HomePage onNavigate={setActivePage} />
-  }, [activePage])
+  }, [activePage, activeServiceId])
 
   if (isAgentView) {
     return <AgentConsole />
@@ -698,8 +838,8 @@ export default function App() {
 
       <footer className="footer-note site-footer">
         <p>
-          Disclaimer: This website draft is for presentation purposes only and does
-          not create an attorney-client relationship.
+          Sequoia Law Group | Bar admissions and jurisdiction-specific services available on request.
+          This website is attorney advertising and does not create an attorney-client relationship.
         </p>
       </footer>
 
