@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import ChatWidget from './ChatWidget.jsx'
 import AgentConsole from './AgentConsole.jsx'
+import { siteFeatures } from './siteFeatures.js'
 import { CHAT_API_BASE } from './chatConfig.js'
 import { getVisitorId } from './chatIdentity.js'
 
@@ -212,11 +213,11 @@ function HomePage({ onNavigate }) {
 
         </div>
 
-        <section className="insight-strip reveal reveal-delay">
+        <section className="insight-strip reveal reveal-delay" aria-label="Recent insights">
           {insights.map((item) => (
             <article key={item.title} className="insight-card">
-              <h2>{item.title}</h2>
-              <p>{item.date}</p>
+              <h3 className="insight-card-title">{item.title}</h3>
+              <p className="insight-card-date">{item.date}</p>
             </article>
           ))}
         </section>
@@ -805,7 +806,7 @@ export default function App() {
     return <HomePage onNavigate={setActivePage} />
   }, [activePage, activeServiceId])
 
-  if (isAgentView) {
+  if (isAgentView && siteFeatures.agentConsole) {
     return <AgentConsole />
   }
 
@@ -843,7 +844,7 @@ export default function App() {
         </p>
       </footer>
 
-      <ChatWidget />
+      {siteFeatures.liveChat ? <ChatWidget /> : null}
     </main>
   )
 }
